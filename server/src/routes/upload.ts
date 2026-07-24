@@ -115,8 +115,8 @@ uploadRouter.post("/upload", upload.single("file"), (req, res) => {
 
   db.prepare(
     `INSERT INTO documents (id, title, content, owner_id, created_at, updated_at)
-     VALUES (@id, @title, @content, @owner_id, @created_at, @updated_at)`
-  ).run(doc);
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(doc.id, doc.title, doc.content, doc.owner_id, doc.created_at, doc.updated_at);
 
   res.status(201).json({ document: doc });
 });
@@ -125,3 +125,4 @@ uploadRouter.post("/upload", upload.single("file"), (req, res) => {
 uploadRouter.use((err: Error, _req: any, res: any, _next: any) => {
   res.status(400).json({ error: err.message || "Upload failed" });
 });
+

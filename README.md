@@ -7,80 +7,13 @@ Built for a take-home assignment, so the scope is deliberately narrow — see
 
 **Stack:** React + TypeScript (Vite) on the frontend, Node.js + Express +
 TypeScript on the backend, SQLite for storage.
+# DocApp
 
-## What's here
+A Google Docs–style collaborative document editor built with React, TypeScript (Vite), Express, and SQLite.
 
-```
-docapp/
-  server/   Express API + SQLite
-  client/   React app (Vite)
-```
+## Live Demo
 
-## Running it locally
-
-You need Node 18+ (I built this on Node 22). Two terminals, one for each side.
-
-**1. Backend**
-
-```bash
-cd server
-npm install
-npm run dev
-```
-
-This starts the API on `http://localhost:4000`. On first run it creates
-`server/data/docapp.sqlite3` and seeds three demo users plus two starter
-documents, so there's something to look at immediately.
-
-**2. Frontend**
-
-```bash
-cd client
-npm install
-cp .env.example .env   # already points at http://localhost:4000/api, only edit if you changed the API port
-npm run dev
-```
-
-Open `http://localhost:5173`. Pick any of the three seeded accounts on the
-login screen — there's no password, see the note below.
-
-## Demo accounts
-
-There's no real signup/login. The login screen lists three seeded users
-(Vinay, Asha, Marcus) and clicking one logs you in as that user. This was a
-deliberate scope cut, not an oversight — see `ARCHITECTURE.md`.
-
-To see sharing in action: log in as **Vinay**, open "Welcome to DocApp" (already
-shared with Asha), or share a document with **Marcus** yourself and then log
-in as Marcus in another browser / incognito window to see it show up under
-"Shared with you."
-
-## Supported file types for import
-
-Only `.txt` and `.md`. This is stated on the upload button in the UI and
-enforced server-side. I didn't implement `.docx` import — see
-`ARCHITECTURE.md` for why.
-
-## Running tests
-
-```bash
-cd server
-npm test
-```
-
-Covers document creation, access control (private docs staying private),
-sharing with view vs. edit permission, and delete permissions being
-owner-only. This was the part of the app I most wanted to be sure was
-actually correct, since it's the crux of the "sharing" requirement.
-
-I didn't add frontend tests given the time box — see `ARCHITECTURE.md`.
-
-## Building for production
-
-```bash
-cd client && npm run build   # outputs client/dist
-cd server && npm run build   # outputs server/dist, then `npm start`
-```
+🌐 LiveURL: https://doc-app-alpha-eight.vercel.app/
 
 ## Deployment
 
@@ -100,5 +33,3 @@ this size it felt like process overhead the assignment didn't ask for.
   role hierarchy beyond that.
 - File import only handles `.txt` and `.md`.
 
-Everything else (what's working, what's incomplete, what I'd do next) is in
-`ARCHITECTURE.md`.

@@ -21,7 +21,7 @@ function canAccess(doc: DocumentRow, userId: string): "owner" | "edit" | "view" 
   if (doc.owner_id === userId) return "owner";
   const share = db
     .prepare("SELECT * FROM shares WHERE document_id = ? AND user_id = ?")
-    .get(doc.id, userId) as ShareRow | undefined;
+    .get(doc.id, userId) as unknown as ShareRow | undefined;
   return share ? share.permission : null;
 }
 
@@ -31,7 +31,7 @@ documentsRouter.get("/documents", (req, res) => {
 
   const owned = db
     .prepare("SELECT * FROM documents WHERE owner_id = ? ORDER BY updated_at DESC")
-    .all(userId) as DocumentRow[];
+    .all(userId) as unknown as DocumentRow[];
 
   const shared = db
     .prepare(
@@ -40,10 +40,10 @@ documentsRouter.get("/documents", (req, res) => {
        WHERE s.user_id = ?
        ORDER BY d.updated_at DESC`
     )
-    .all(userId) as DocumentRow[];
+    .all(userId) as unknown as DocumentRow[];
 
   const attachOwnerName = (doc: DocumentRow, access: "owner" | "shared") => {
-    const owner = db.prepare("SELECT name FROM users WHERE id = ?").get(doc.owner_id) as { name: string };
+    const owner = db.prepare("SELECT name FROM users WHERE id = ?").get(doc.owner_id) as unknown as { name: string };
     return { ...doc, owner_name: owner.name, access };
   };
 
@@ -74,28 +74,28 @@ documentsRouter.post("/documents", (req, res) => {
 
   db.prepare(
     `INSERT INTO documents (id, title, content, owner_id, created_at, updated_at)
-     VALUES (@id, @title, @content, @owner_id, @created_at, @updated_at)`
-  ).run(doc);
+     VALUES (?, ?, ?, ?, ?, ?)`
+  ).run(doc.id, doc.title, doc.content, doc.owner_id, doc.created_at, doc.updated_at);
 
   res.status(201).json({ document: doc });
 });
 
 // GET /api/documents/:id
 documentsRouter.get("/documents/:id", (req, res) => {
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as DocumentRow | undefined;
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as DocumentRow | undefined;
   if (!doc) return res.status(404).json({ error: "Document not found" });
 
   const permission = canAccess(doc, req.user!.id);
   if (!permission) return res.status(403).json({ error: "You don't have access to this document" });
 
-  const owner = db.prepare("SELECT name FROM users WHERE id = ?").get(doc.owner_id) as { name: string };
+  const owner = db.prepare("SELECT name FROM users WHERE id = ?").get(doc.owner_id) as unknown as { name: string };
   const shares = db
     .prepare(
       `SELECT u.id, u.name, s.permission FROM shares s
        JOIN users u ON u.id = s.user_id
        WHERE s.document_id = ?`
     )
-    .all(doc.id) as { id: string; name: string; permission: string }[];
+    .all(doc.id) as unknown as { id: string; name: string; permission: string }[];
 
   const response: DocWithMeta = {
     ...doc,
@@ -110,7 +110,7 @@ documentsRouter.get("/documents/:id", (req, res) => {
 
 // PATCH /api/documents/:id - rename and/or edit content
 documentsRouter.patch("/documents/:id", (req, res) => {
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as DocumentRow | undefined;
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as DocumentRow | undefined;
   if (!doc) return res.status(404).json({ error: "Document not found" });
 
   const permission = canAccess(doc, req.user!.id);
@@ -145,7 +145,7 @@ documentsRouter.patch("/documents/:id", (req, res) => {
 
 // DELETE /api/documents/:id - owner only
 documentsRouter.delete("/documents/:id", (req, res) => {
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as DocumentRow | undefined;
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as DocumentRow | undefined;
   if (!doc) return res.status(404).json({ error: "Document not found" });
   if (doc.owner_id !== req.user!.id) return res.status(403).json({ error: "Only the owner can delete this document" });
 
@@ -155,7 +155,7 @@ documentsRouter.delete("/documents/:id", (req, res) => {
 
 // POST /api/documents/:id/share - owner grants access to another user
 documentsRouter.post("/documents/:id/share", (req, res) => {
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as DocumentRow | undefined;
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as DocumentRow | undefined;
   if (!doc) return res.status(404).json({ error: "Document not found" });
   if (doc.owner_id !== req.user!.id) return res.status(403).json({ error: "Only the owner can share this document" });
 
@@ -163,13 +163,13 @@ documentsRouter.post("/documents/:id/share", (req, res) => {
   if (!userId) return res.status(400).json({ error: "userId is required" });
   if (userId === doc.owner_id) return res.status(400).json({ error: "Document is already owned by that user" });
 
-  const targetUser = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as User | undefined;
+  const targetUser = db.prepare("SELECT * FROM users WHERE id = ?").get(userId) as unknown as User | undefined;
   if (!targetUser) return res.status(404).json({ error: "No user with that id" });
 
   const perm = permission === "view" ? "view" : "edit";
   const existing = db
     .prepare("SELECT * FROM shares WHERE document_id = ? AND user_id = ?")
-    .get(doc.id, userId) as ShareRow | undefined;
+    .get(doc.id, userId) as unknown as ShareRow | undefined;
 
   if (existing) {
     db.prepare("UPDATE shares SET permission = ? WHERE id = ?").run(perm, existing.id);
@@ -193,10 +193,11 @@ documentsRouter.post("/documents/:id/share", (req, res) => {
 
 // DELETE /api/documents/:id/share/:userId - owner revokes access
 documentsRouter.delete("/documents/:id/share/:userId", (req, res) => {
-  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as DocumentRow | undefined;
+  const doc = db.prepare("SELECT * FROM documents WHERE id = ?").get(req.params.id) as unknown as DocumentRow | undefined;
   if (!doc) return res.status(404).json({ error: "Document not found" });
   if (doc.owner_id !== req.user!.id) return res.status(403).json({ error: "Only the owner can manage sharing" });
 
   db.prepare("DELETE FROM shares WHERE document_id = ? AND user_id = ?").run(doc.id, req.params.userId);
   res.status(204).send();
 });
+

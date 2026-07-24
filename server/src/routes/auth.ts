@@ -6,7 +6,7 @@ export const authRouter = Router();
 
 // Lets the login screen show who's available to sign in as.
 authRouter.get("/users", (_req, res) => {
-  const users = db.prepare("SELECT id, name, email, avatar_color FROM users").all() as User[];
+  const users = db.prepare("SELECT id, name, email, avatar_color FROM users").all() as unknown as User[];
   res.json({ users });
 });
 
@@ -16,10 +16,11 @@ authRouter.post("/auth/login", (req, res) => {
   const { userId } = req.body as { userId?: string };
   if (!userId) return res.status(400).json({ error: "userId is required" });
 
-  const user = db.prepare("SELECT id, name, email, avatar_color FROM users WHERE id = ?").get(userId) as
+  const user = db.prepare("SELECT id, name, email, avatar_color FROM users WHERE id = ?").get(userId) as unknown as
     | User
     | undefined;
   if (!user) return res.status(404).json({ error: "No user with that id" });
 
   res.json({ user, token: user.id });
 });
+

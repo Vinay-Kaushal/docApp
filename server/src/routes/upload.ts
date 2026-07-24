@@ -115,8 +115,15 @@ uploadRouter.post("/upload", upload.single("file"), (req, res) => {
 
   db.prepare(
     `INSERT INTO documents (id, title, content, owner_id, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(doc.id, doc.title, doc.content, doc.owner_id, doc.created_at, doc.updated_at);
+     VALUES (@id, @title, @content, @owner_id, @created_at, @updated_at)`
+  ).run({
+    id: doc.id,
+    title: doc.title,
+    content: doc.content,
+    owner_id: doc.owner_id,
+    created_at: doc.created_at,
+    updated_at: doc.updated_at,
+  });
 
   res.status(201).json({ document: doc });
 });
